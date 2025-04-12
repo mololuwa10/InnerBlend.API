@@ -10,6 +10,7 @@ namespace InnerBlend.API.Models
     {
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
-        public string? DateCreated { get; set; } = DateTime.UtcNow;
+        public string? DateCreated { get; set; } = DateTime.UtcNow.ToString();
+        public string? DateModified { get; set; }
     }
 }
