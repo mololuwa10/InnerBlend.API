@@ -132,6 +132,8 @@ using (var scope = app.Services.CreateScope())
 
 app.MapControllers();
 
+// Console.WriteLine(KeyGenerator.GenerateKey());
+
 app.Run();
 
 // record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
