@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("InnerBlend.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e45395baab04df880ac683dad3686e521b8559f2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fe4f9ff33ca52fa9466eb9be13153d71ae6deac5")]
 [assembly: System.Reflection.AssemblyProductAttribute("InnerBlend.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InnerBlend.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
