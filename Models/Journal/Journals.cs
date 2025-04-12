@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 
 namespace InnerBlend.API.Models.Journal
 {
-    public class JournalEntry
+    public class Journals
     {
         [Key]
-        public string? EntryId { get; set; }
-        public string? JournalId { get; set; }
-        public Journals? Journal { get; set; }
-        public string? Title { get; set; }
-        public string? Content { get; set; }
-        public List<string>? Tags { get; set; }
+        public int JournalId { get; set; }
+        public string? UserId {get; set;}
+        public User? User { get; set; }
+        [Required]
+        public string? JournalTitle { get; set; }
+        public string? JournalDescription { get; set; }
+        public List<JournalEntry>? JournalEntries { get; set; }
         public string? DateCreated { get; set; } = DateTime.UtcNow.ToString();
         public string? DateModified { get; set; }
     }
