@@ -23,6 +23,8 @@ builder.Configuration["Jwt:Audience"] = Env.GetString("JWT_AUDIENCE");
 builder.Configuration["Jwt:Key"] = Env.GetString("JWT_KEY");
 builder.Configuration["Jwt:ExpiresInMinutes"] = Env.GetString("JWT_EXPIRES_IN_MINUTES");
 
+builder.Configuration["Kestrel:Endpoints:Http:Url"] = Env.GetString("KESTREL_URL");
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
