@@ -9,8 +9,8 @@ namespace InnerBlend.API.Models.Journal
     public class JournalEntry
     {
         [Key]
-        public string? EntryId { get; set; }
-        public string? JournalId { get; set; }
+        public int? JournalEntryId { get; set; }
+        public int? JournalId { get; set; }
         public Journals? Journal { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
