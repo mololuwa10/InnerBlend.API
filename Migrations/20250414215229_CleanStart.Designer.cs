@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace InnerBlend.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250412142447_CleanStart")]
+    [Migration("20250414215229_CleanStart")]
     partial class CleanStart
     {
         /// <inheritdoc />

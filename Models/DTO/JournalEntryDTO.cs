@@ -1,21 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace InnerBlend.API.Models.Journal
+namespace InnerBlend.API.Models.DTO
 {
-    public class JournalEntry
+    public class JournalEntryDTO
     {
-        [Key]
         public int? JournalEntryId { get; set; }
         public int? JournalId { get; set; }
-        public Journals? Journal { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
         public ICollection<string>? Tags { get; set; }
-        public string? DateCreated { get; set; } = DateTime.UtcNow.ToString();
+        public string? DateCreated { get; set; }
         public string? DateModified { get; set; }
     }
 }
