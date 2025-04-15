@@ -3,6 +3,7 @@ using System;
 using InnerBlend.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace InnerBlend.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250415230658_UpdateDateTypes")]
+    partial class UpdateDateTypes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,6 +45,9 @@ namespace InnerBlend.API.Migrations
                     b.Property<int?>("JournalId")
                         .HasColumnType("integer");
 
+                    b.PrimitiveCollection<string[]>("Tags")
+                        .HasColumnType("text[]");
+
                     b.Property<string>("Title")
                         .HasColumnType("text");
 
@@ -50,21 +56,6 @@ namespace InnerBlend.API.Migrations
                     b.HasIndex("JournalId");
 
                     b.ToTable("JournalEntries");
-                });
-
-            modelBuilder.Entity("InnerBlend.API.Models.Journal.JournalEntryTag", b =>
-                {
-                    b.Property<int>("JournalEntryId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TagId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("JournalEntryId", "TagId");
-
-                    b.HasIndex("TagId");
-
-                    b.ToTable("JournalEntryTags");
                 });
 
             modelBuilder.Entity("InnerBlend.API.Models.Journal.Journals", b =>
@@ -96,22 +87,6 @@ namespace InnerBlend.API.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Journals");
-                });
-
-            modelBuilder.Entity("InnerBlend.API.Models.Journal.Tag", b =>
-                {
-                    b.Property<int>("TagId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TagId"));
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.HasKey("TagId");
-
-                    b.ToTable("Tags");
                 });
 
             modelBuilder.Entity("InnerBlend.API.Models.User", b =>
@@ -188,25 +163,6 @@ namespace InnerBlend.API.Migrations
                     b.Navigation("Journal");
                 });
 
-            modelBuilder.Entity("InnerBlend.API.Models.Journal.JournalEntryTag", b =>
-                {
-                    b.HasOne("InnerBlend.API.Models.Journal.JournalEntry", "JournalEntry")
-                        .WithMany("JournalEntryTags")
-                        .HasForeignKey("JournalEntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("InnerBlend.API.Models.Journal.Tag", "Tag")
-                        .WithMany("JournalEntries")
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("JournalEntry");
-
-                    b.Navigation("Tag");
-                });
-
             modelBuilder.Entity("InnerBlend.API.Models.Journal.Journals", b =>
                 {
                     b.HasOne("InnerBlend.API.Models.User", "User")
@@ -216,17 +172,7 @@ namespace InnerBlend.API.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("InnerBlend.API.Models.Journal.JournalEntry", b =>
-                {
-                    b.Navigation("JournalEntryTags");
-                });
-
             modelBuilder.Entity("InnerBlend.API.Models.Journal.Journals", b =>
-                {
-                    b.Navigation("JournalEntries");
-                });
-
-            modelBuilder.Entity("InnerBlend.API.Models.Journal.Tag", b =>
                 {
                     b.Navigation("JournalEntries");
                 });

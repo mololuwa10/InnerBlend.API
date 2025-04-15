@@ -21,7 +21,11 @@ namespace InnerBlend.API.Controllers.JournalControllers
         [Authorize]
         public async Task<ActionResult<JournalEntry>> GetJournalEntry(int entryId)
         {
-            var journalEntry = await dbContext.JournalEntries.FindAsync(entryId);
+            var journalEntry = await dbContext.JournalEntries
+                .Include(e => e.JournalEntryTags!)
+                    .ThenInclude(jt => jt.Tag)
+                .FirstOrDefaultAsync(e => e.JournalEntryId == entryId);
+                
             if (journalEntry == null) 
             {
                 return NotFound("Journal entry not found.");
@@ -33,7 +37,12 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 JournalId = journalEntry.JournalId,
                 Title = journalEntry.Title,
                 Content = journalEntry.Content,
-                Tags = journalEntry.Tags,
+                Tags = journalEntry.JournalEntryTags != null 
+                        ? journalEntry.JournalEntryTags
+                            .Where(jt => jt.Tag != null && jt.Tag.Name != null)
+                            .Select(jt => jt.Tag!.Name!)
+                            .ToList()
+                        : [],
                 DateCreated = journalEntry.DateCreated,
                 DateModified = journalEntry.DateModified
             };
@@ -62,7 +71,12 @@ namespace InnerBlend.API.Controllers.JournalControllers
                     JournalId = e.JournalId,
                     Title = e.Title,
                     Content = e.Content,
-                    Tags = e.Tags,
+                    Tags = e.JournalEntryTags != null 
+                        ? e.JournalEntryTags
+                            .Where(jt => jt.Tag != null && jt.Tag.Name != null)
+                            .Select(jt => jt.Tag!.Name!)
+                            .ToList()
+                        : new List<string>(),
                     DateCreated = e.DateCreated,
                     DateModified = e.DateModified
                 }).ToListAsync();
@@ -83,12 +97,29 @@ namespace InnerBlend.API.Controllers.JournalControllers
             
             var now = DateTime.UtcNow;
             
+            // Convert tag names from the DTO into Tag objects (or create new ones)
+            var tags = new List<Tag>();
+            foreach (var tagName in entryDTO.Tags ?? [])
+            {
+                var tag = await dbContext.Tags
+                    .FirstOrDefaultAsync(t => t.Name == tagName);
+                if (tag == null)
+                {
+                    tag = new Tag { Name = tagName };
+                    dbContext.Tags.Add(tag);
+                }
+                tags.Add(tag);
+            }
+            
             var entry = new JournalEntry
             {
                 JournalId = journalId,
                 Title = entryDTO.Title,
                 Content = entryDTO.Content,
-                Tags = entryDTO.Tags,
+                JournalEntryTags = tags.Select(tag => new JournalEntryTag
+                {
+                    Tag = tag
+                }).ToList(),
                 DateCreated = now,
                 DateModified = now
             };
@@ -102,7 +133,10 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 JournalId = entry.JournalId,
                 Title = entry.Title,
                 Content = entry.Content,
-                Tags = entry.Tags,
+                Tags = entry.JournalEntryTags?
+                    .Where(jt => jt.Tag != null && jt.Tag.Name != null)
+                    .Select(jt => jt.Tag!.Name!)
+                    .ToList() ?? [],
                 DateCreated = entry.DateCreated,
                 DateModified = entry.DateModified
             };
