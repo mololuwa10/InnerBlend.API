@@ -92,7 +92,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 return BadRequest("Journal title is required.");
             }
             
-            var now = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            var now = DateTime.UtcNow;
             
             var newJournal = new Journals
             {
@@ -132,7 +132,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             journal.JournalTitle = journalDTO.JournalTitle ?? journal.JournalTitle;
             journal.JournalDescription = journalDTO.JournalDescription ?? journal.JournalDescription;
-            journal.DateModified = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            journal.DateModified = DateTime.UtcNow;
 
             await dbContext.SaveChangesAsync();
 

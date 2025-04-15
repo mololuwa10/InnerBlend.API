@@ -38,7 +38,7 @@ namespace InnerBlend.API.Controllers.AuthController
             user.UserName = model.Email ?? user.UserName;
             user.PhoneNumber = model.PhoneNumber ?? user.PhoneNumber;
 
-            user.DateModified = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+            user.DateModified = DateTime.UtcNow;
 
             // Update user successfully
             var updateResult = await userManager.UpdateAsync(user);
@@ -107,7 +107,7 @@ namespace InnerBlend.API.Controllers.AuthController
 				}
 			}
 			
-            user.DateModified = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+            user.DateModified = DateTime.UtcNow;
 			
 			var updateResult = await userManager.UpdateAsync(user);
 

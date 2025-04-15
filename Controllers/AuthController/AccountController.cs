@@ -41,7 +41,7 @@ namespace InnerBlend.API.Controllers.AuthController
                     LastName = model.LastName,
                     Email = model.Email,
                     UserName = model.Email,
-                    DateCreated = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                    DateCreated = DateTime.UtcNow
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password ?? string.Empty);
