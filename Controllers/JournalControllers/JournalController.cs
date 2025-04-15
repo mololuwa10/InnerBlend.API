@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using InnerBlend.API.Data;
 using InnerBlend.API.Models.DTO;
 using InnerBlend.API.Models.Journal;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
     public class JournalController(ApplicationDbContext dbContext) : ControllerBase
     {
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<JournalDTO>>> GetJournals() 
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -44,6 +46,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
         }
         
         [HttpGet("{id}")]
+        [Authorize]
 		public async Task<ActionResult<Journals>> GetJournals(int journalId)
 		{
 			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -75,6 +78,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
 		}
 		
 		[HttpPost]
+        [Authorize]
 		public async Task<ActionResult<Journals>> CreateJournal([FromBody] JournalDTO journalDTO) 
 		{
 		    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -108,7 +112,8 @@ namespace InnerBlend.API.Controllers.JournalControllers
             return CreatedAtAction(nameof(GetJournals), new { id = newJournal.JournalId }, newJournal);
 		}
 		
-        [HttpPut("{id}")]
+        [HttpPut("{journalId}")]
+        [Authorize]
         public async Task<ActionResult<Journals>> UpdateJournal(int journalId, [FromBody] JournalDTO journalDTO) 
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -129,6 +134,30 @@ namespace InnerBlend.API.Controllers.JournalControllers
             journal.JournalDescription = journalDTO.JournalDescription ?? journal.JournalDescription;
             journal.DateModified = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
+            await dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+        
+        [HttpDelete("{journalId}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteJournal(int journalId) 
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("You are not logged in");
+            }
+            
+            var journal = await dbContext.Journals
+                .FirstOrDefaultAsync(j => j.JournalId == journalId && j.UserId == userId);
+
+            if (journal == null) 
+            {
+                return NotFound("Journal not found.");
+            }
+            
+            dbContext.Journals.Remove(journal);
             await dbContext.SaveChangesAsync();
 
             return NoContent();
