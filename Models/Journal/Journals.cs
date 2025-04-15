@@ -16,7 +16,7 @@ namespace InnerBlend.API.Models.Journal
         public string? JournalTitle { get; set; }
         public string? JournalDescription { get; set; }
         public ICollection<JournalEntry>? JournalEntries { get; set; }
-        public string? DateCreated { get; set; } = DateTime.UtcNow.ToString();
-        public string? DateModified { get; set; }
+        public DateTime? DateCreated { get; set; } = DateTime.UtcNow;
+        public DateTime? DateModified { get; set; }
     }
 }

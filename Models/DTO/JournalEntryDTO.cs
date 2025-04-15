@@ -12,7 +12,7 @@ namespace InnerBlend.API.Models.DTO
         public string? Title { get; set; }
         public string? Content { get; set; }
         public ICollection<string>? Tags { get; set; }
-        public string? DateCreated { get; set; }
-        public string? DateModified { get; set; }
+        public DateTime? DateCreated { get; set; }
+        public DateTime? DateModified { get; set; }
     }
 }

@@ -69,5 +69,45 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             return Ok(entries);
         }
+        
+        // POST: api/journalentry/journalId
+        [HttpPost("journal/{journalId}")] 
+        [Authorize]
+        public async Task<ActionResult<JournalEntry>> CreateJournalEntry(int journalId, [FromBody] JournalEntryDTO entryDTO) 
+        {
+            var journal = await dbContext.Journals.FindAsync(journalId);
+            if (journal == null)
+            {
+                return NotFound("Journal not found.");
+            }
+            
+            var now = DateTime.UtcNow;
+            
+            var entry = new JournalEntry
+            {
+                JournalId = journalId,
+                Title = entryDTO.Title,
+                Content = entryDTO.Content,
+                Tags = entryDTO.Tags,
+                DateCreated = now,
+                DateModified = now
+            };
+
+            await dbContext.JournalEntries.AddAsync(entry);
+            await dbContext.SaveChangesAsync();
+            
+            var resultDTO = new JournalEntryDTO
+            {
+                JournalEntryId = entry.JournalEntryId,
+                JournalId = entry.JournalId,
+                Title = entry.Title,
+                Content = entry.Content,
+                Tags = entry.Tags,
+                DateCreated = entry.DateCreated,
+                DateModified = entry.DateModified
+            };
+            
+            return CreatedAtAction(nameof(GetJournalEntry), new { entryId = entry.JournalEntryId }, resultDTO);
+        }
     }
 }
