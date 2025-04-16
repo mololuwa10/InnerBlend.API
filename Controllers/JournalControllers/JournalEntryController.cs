@@ -217,5 +217,35 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             return NoContent();
         }
+        
+        // DELETE: api/journalentry/entryId
+        [HttpDelete("{entryId}")] 
+        [Authorize]
+        public async Task<IActionResult> DeleteJournalEntry(int entryId) 
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            
+            // Fetch entry with tags included
+            var entry = await dbContext.JournalEntries
+                .Include(e => e.JournalEntryTags)
+                .ThenInclude(jt => jt.Tag)
+                .FirstOrDefaultAsync(e => e.JournalEntryId == entryId && e.Journal != null && e.Journal.UserId == userId);
+            
+            if (entry == null) 
+            {
+                return NotFound("Journal entry not found.");
+            }
+            
+            // Remove tag relationships (without deleting the tags themselves)
+            if (entry.JournalEntryTags != null && entry.JournalEntryTags.Any())
+            {
+                dbContext.JournalEntryTags.RemoveRange(entry.JournalEntryTags);
+            }
+            
+            dbContext.JournalEntries.Remove(entry);
+            await dbContext.SaveChangesAsync();
+            
+            return NoContent();
+        }
     }
 }
