@@ -45,6 +45,11 @@ namespace InnerBlend.API.Data
                 .HasOne(j => j.User)
                 .WithMany()
                 .HasForeignKey(j => j.UserId);
+            
+            // Relationships for Tags
+            modelBuilder.Entity<Tag>()
+                .HasIndex(t => new { t.Name, t.UserId })
+                .IsUnique();
         }
     }
 }

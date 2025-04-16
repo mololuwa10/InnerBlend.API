@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using InnerBlend.API.Data;
 using InnerBlend.API.Models.DTO;
@@ -89,7 +90,10 @@ namespace InnerBlend.API.Controllers.JournalControllers
         [Authorize]
         public async Task<ActionResult<JournalEntry>> CreateJournalEntry(int journalId, [FromBody] JournalEntryDTO entryDTO) 
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            
             var journal = await dbContext.Journals.FindAsync(journalId);
+            
             if (journal == null)
             {
                 return NotFound("Journal not found.");
@@ -106,14 +110,17 @@ namespace InnerBlend.API.Controllers.JournalControllers
             var tags = new List<Tag>();
             foreach (var tagName in entryDTO.Tags ?? [])
             {
+                var trimmedName = tagName.Trim().ToLower();
+
                 var tag = await dbContext.Tags
-                    .FirstOrDefaultAsync(t => t.Name == tagName);
-                    
+                    .FirstOrDefaultAsync(t => t.Name != null && t.Name.ToLower() == trimmedName && t.UserId == userId);
+
                 if (tag == null)
                 {
-                    tag = new Tag { Name = tagName };
+                    tag = new Tag { Name = trimmedName, UserId = userId };
                     dbContext.Tags.Add(tag);
                 }
+
                 tags.Add(tag);
             }
             
@@ -155,6 +162,8 @@ namespace InnerBlend.API.Controllers.JournalControllers
         [Authorize]
         public async Task<IActionResult> UpdateJournalEntry(int entryId, [FromBody] JournalEntryDTO entryDTO) 
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            
             #pragma warning disable CS8620 
             var entry = await dbContext.JournalEntries
                 .Include(e => e.JournalEntryTags)
@@ -175,13 +184,13 @@ namespace InnerBlend.API.Controllers.JournalControllers
             
             // Get existing tags from DB
             var existingTags = await dbContext.Tags
-                .Where(t => newTags.Contains(t.Name!.ToLower()))
+                .Where(t => newTags.Contains(t.Name!.ToLower()) && t.UserId == userId)
                 .ToListAsync();
                 
             // Tags to add (not in DB yet)
             var tagsToAdd = newTags
                 .Where(t => !existingTags.Any(et => et.Name!.ToLower() == t))
-                .Select(t => new Tag { Name = t })
+                .Select(t => new Tag { Name = t, UserId = userId })
                 .ToList();
                 
             // Add new tags to DB
