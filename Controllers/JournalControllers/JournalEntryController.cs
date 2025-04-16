@@ -95,6 +95,11 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 return NotFound("Journal not found.");
             }
             
+            if (string.IsNullOrWhiteSpace(entryDTO.Title) || string.IsNullOrWhiteSpace(entryDTO.Content))
+            {
+                return BadRequest("Title and content are required.");
+            }
+       
             var now = DateTime.UtcNow;
             
             // Convert tag names from the DTO into Tag objects (or create new ones)
@@ -103,6 +108,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
             {
                 var tag = await dbContext.Tags
                     .FirstOrDefaultAsync(t => t.Name == tagName);
+                    
                 if (tag == null)
                 {
                     tag = new Tag { Name = tagName };
@@ -142,6 +148,65 @@ namespace InnerBlend.API.Controllers.JournalControllers
             };
             
             return CreatedAtAction(nameof(GetJournalEntry), new { entryId = entry.JournalEntryId }, resultDTO);
+        }
+        
+        // PUT: api/journalentry/entryId
+        [HttpPut("{entryId}")] 
+        [Authorize]
+        public async Task<IActionResult> UpdateJournalEntry(int entryId, [FromBody] JournalEntryDTO entryDTO) 
+        {
+            #pragma warning disable CS8620 
+            var entry = await dbContext.JournalEntries
+                .Include(e => e.JournalEntryTags)
+                .ThenInclude(jt => jt.Tag)
+                .FirstOrDefaultAsync(e => e.JournalEntryId == entryId);
+
+            if (entry == null) 
+            {
+                return NotFound("Journal entry not found.");
+            }
+            
+            entry.Title = entryDTO.Title;
+            entry.Content = entryDTO.Content;
+            entry.DateModified = DateTime.UtcNow;
+            
+            // HANDLE TAGS
+            var newTags = entryDTO.Tags?.Select(t => t.Trim().ToLower()).Distinct().ToList() ?? [];
+            
+            // Get existing tags from DB
+            var existingTags = await dbContext.Tags
+                .Where(t => newTags.Contains(t.Name!.ToLower()))
+                .ToListAsync();
+                
+            // Tags to add (not in DB yet)
+            var tagsToAdd = newTags
+                .Where(t => !existingTags.Any(et => et.Name!.ToLower() == t))
+                .Select(t => new Tag { Name = t })
+                .ToList();
+                
+            // Add new tags to DB
+            dbContext.Tags.AddRange(tagsToAdd);
+            await dbContext.SaveChangesAsync();
+            
+            var allTags = existingTags.Concat(tagsToAdd).ToList();
+            
+            // Remove old tag links
+            if (entry.JournalEntryTags != null)
+            {
+                dbContext.JournalEntryTags.RemoveRange(entry.JournalEntryTags);
+            }
+
+            // Add updated tag links
+            entry.JournalEntryTags = allTags
+                .Select(t => new JournalEntryTag
+                {
+                    JournalEntryId = entryId,
+                    TagId = t.TagId
+                }).ToList();
+
+            await dbContext.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
