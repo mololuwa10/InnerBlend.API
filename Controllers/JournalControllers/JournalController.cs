@@ -27,20 +27,39 @@ namespace InnerBlend.API.Controllers.JournalControllers
             }
 
             #pragma warning disable CS8602
-            
             var journalItems = await dbContext?
-				.Journals?.Where(t => t.UserId == userId)
-				.Select(t => new JournalDTO
-				{
-					JournalId = t.JournalId,
+                .Journals?.Where(t => t.UserId == userId)
+                .Select(t => new JournalDTO
+                {
+                    JournalId = t.JournalId,
                     JournalTitle = t.JournalTitle,
                     JournalDescription = t.JournalDescription,
                     DateCreated = t.DateCreated,
                     DateModified = t.DateModified,
                     UserId = t.UserId,
-                    JournalEntries = t.JournalEntries
-				})
-				.ToListAsync();
+                    JournalEntries = t.JournalEntries!.Select(e => new JournalEntry
+                    {
+                        JournalEntryId = e.JournalEntryId,
+                        JournalId = e.JournalId,
+                        Title = e.Title,
+                        Content = e.Content,
+                        DateCreated = e.DateCreated,
+                        DateModified = e.DateModified,
+                        JournalEntryTags = e.JournalEntryTags!.Select(jet => new JournalEntryTag
+                        {
+                            JournalEntryId = jet.JournalEntryId,
+                            TagId = jet.TagId,
+                            Tag = new Tag
+                            {
+                                TagId = jet.Tag.TagId,
+                                Name = jet.Tag.Name,
+                                UserId = jet.Tag.UserId
+                            }
+                        }).ToList()
+                    }).ToList()
+                })
+                .ToListAsync();
+
 
             return Ok(journalItems);
         }
@@ -56,18 +75,37 @@ namespace InnerBlend.API.Controllers.JournalControllers
 			}
 			
 			var journalItem = await dbContext?
-				.Journals?.Where(t => t.UserId == userId && t.JournalId == journalId)
-				.Select(t => new JournalDTO
-				{
+                .Journals?.Where(t => t.UserId == userId && t.JournalId == journalId)
+                .Select(t => new JournalDTO
+                {
                     JournalId = t.JournalId,
                     JournalTitle = t.JournalTitle,
                     JournalDescription = t.JournalDescription,
                     DateCreated = t.DateCreated,
                     DateModified = t.DateModified,
                     UserId = t.UserId,
-                    JournalEntries = t.JournalEntries
-				})
-				.FirstOrDefaultAsync();
+                    JournalEntries = t.JournalEntries!.Select(e => new JournalEntry
+                    {
+                        JournalEntryId = e.JournalEntryId,
+                        JournalId = e.JournalId,
+                        Title = e.Title,
+                        Content = e.Content,
+                        DateCreated = e.DateCreated,
+                        DateModified = e.DateModified,
+                        JournalEntryTags = e.JournalEntryTags!.Select(jet => new JournalEntryTag
+                        {
+                            JournalEntryId = jet.JournalEntryId,
+                            TagId = jet.TagId,
+                            Tag = new Tag
+                            {
+                                TagId = jet.Tag.TagId,
+                                Name = jet.Tag.Name,
+                                UserId = jet.Tag.UserId
+                            }
+                        }).ToList()
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
 
 			if (journalItem == null)
 			{
