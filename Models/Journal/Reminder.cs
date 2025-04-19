@@ -22,6 +22,8 @@ namespace InnerBlend.API.Models.Journal
         public TimeOnly ReminderTime { get; set; } // e.g 9:00 AM
         
         public bool IsActive { get; set; }
+        public DateTime? DateCreated { get; set; } = DateTime.UtcNow;
+        public DateTime? DateModified { get; set; }
         
         [ForeignKey("UserId")] 
         public User? User { get; set; }
