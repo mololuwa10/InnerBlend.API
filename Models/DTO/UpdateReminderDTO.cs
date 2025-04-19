@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace InnerBlend.API.Models.DTO
 {
-    public class CreateReminderDTO
+    public class UpdateReminderDTO
     {
         [Required]
         public string? ReminderMessage { get; set; }
-        
+
         [Required]
         public TimeOnly ReminderTime { get; set; }
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; }
     }
 }

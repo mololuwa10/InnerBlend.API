@@ -144,3 +144,8 @@ C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\obj\Debug\net9.0\refin
 C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\obj\Debug\net9.0\InnerBlend.API.pdb
 C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\obj\Debug\net9.0\InnerBlend.API.genruntimeconfig.cache
 C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\obj\Debug\net9.0\ref\InnerBlend.API.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\ReminderFunction\host.json
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\ReminderFunction\local.settings.json
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\ReminderFunction\obj\project.assets.json
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\ReminderFunction\obj\ReminderFunction.csproj.nuget.dgspec.json
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\ReminderFunction\Properties\launchSettings.json
