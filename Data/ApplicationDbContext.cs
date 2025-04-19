@@ -15,6 +15,7 @@ namespace InnerBlend.API.Data
         public DbSet<JournalEntry>  JournalEntries { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<JournalEntryTag> JournalEntryTags { get; set; }
+        public DbSet<Reminder> Reminders { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
