@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using InnerBlend.API.Data;
+using InnerBlend.API.Data; 
 using InnerBlend.API.Models.DTO;
 using InnerBlend.API.Models.Journal;
 using Microsoft.AspNetCore.Authorization;
@@ -64,7 +64,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
             return Ok(journalItems);
         }
         
-        [HttpGet("{id}")]
+        [HttpGet("{journalId}")]
         [Authorize]
 		public async Task<ActionResult<Journals>> GetJournals(int journalId)
 		{
