@@ -40,7 +40,7 @@ namespace InnerBlend.API.Controllers.AuthController
                     FirstName = model.FirstName,
                     LastName = model.LastName,
                     Email = model.Email,
-                    UserName = model.Email,
+                    UserName = model.Username,
                     DateCreated = DateTime.UtcNow
                 };
 
