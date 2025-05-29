@@ -44,6 +44,8 @@ namespace InnerBlend.API.Controllers.JournalControllers
                             .Select(jt => jt.Tag!.Name!)
                             .ToList()
                         : [],
+                Mood = journalEntry.Mood.ToString(),
+                Location = journalEntry.Location,
                 DateCreated = journalEntry.DateCreated,
                 DateModified = journalEntry.DateModified
             };
@@ -78,6 +80,8 @@ namespace InnerBlend.API.Controllers.JournalControllers
                             .Select(jt => jt.Tag!.Name!)
                             .ToList()
                         : new List<string>(),
+                    Mood = e.Mood.ToString(),
+                    Location = e.Location,
                     DateCreated = e.DateCreated,
                     DateModified = e.DateModified
                 }).ToListAsync();
@@ -124,6 +128,12 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 tags.Add(tag);
             }
             
+            Mood? parsedMood = null;
+            if(Enum.TryParse(entryDTO.Mood, out Mood moodEnum)) 
+            {
+                parsedMood = moodEnum;
+            }
+            
             var entry = new JournalEntry
             {
                 JournalId = journalId,
@@ -133,6 +143,8 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 {
                     Tag = tag
                 }).ToList(),
+                Mood = parsedMood,
+                Location = entryDTO.Location,
                 DateCreated = now,
                 DateModified = now
             };
@@ -178,6 +190,12 @@ namespace InnerBlend.API.Controllers.JournalControllers
             entry.Title = entryDTO.Title;
             entry.Content = entryDTO.Content;
             entry.DateModified = DateTime.UtcNow;
+            if (Enum.TryParse(entryDTO.Mood, out Mood updatedMood))
+            {
+                entry.Mood = updatedMood;
+            }
+            entry.Location = entryDTO.Location;
+
             
             // HANDLE TAGS
             var newTags = entryDTO.Tags?.Select(t => t.Trim().ToLower()).Distinct().ToList() ?? [];

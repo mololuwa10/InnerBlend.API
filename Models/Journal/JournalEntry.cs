@@ -14,8 +14,19 @@ namespace InnerBlend.API.Models.Journal
         public Journals? Journal { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
+        public Mood? Mood { get; set; }
+        public string? Location { get; set; }
         public ICollection<JournalEntryTag>? JournalEntryTags { get; set; }
         public DateTime? DateCreated { get; set; } = DateTime.UtcNow;
         public DateTime? DateModified { get; set; }
+    }
+    
+    public enum Mood 
+    {
+        VerySad,
+        Sad,
+        Neutral,
+        Happy,
+        VeryHappy,
     }
 }
