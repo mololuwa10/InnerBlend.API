@@ -190,7 +190,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
             var journal = await dbContext.Journals
                 .FirstOrDefaultAsync(j => j.JournalId == journalId && j.UserId == userId);
 
-            if (journal == null) 
+            if (journal == null)
             {
                 return NotFound("Journal not found.");
             }
