@@ -26,19 +26,19 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 .Include(e => e.JournalEntryTags!)
                     .ThenInclude(jt => jt.Tag)
                 .FirstOrDefaultAsync(e => e.JournalEntryId == entryId);
-                
-            if (journalEntry == null) 
+
+            if (journalEntry == null)
             {
                 return NotFound("Journal entry not found.");
             }
-            
+
             var entryDTO = new JournalEntryDTO
             {
                 JournalEntryId = journalEntry.JournalEntryId,
                 JournalId = journalEntry.JournalId,
                 Title = journalEntry.Title,
                 Content = journalEntry.Content,
-                Tags = journalEntry.JournalEntryTags != null 
+                Tags = journalEntry.JournalEntryTags != null
                         ? journalEntry.JournalEntryTags
                             .Where(jt => jt.Tag != null && jt.Tag.Name != null)
                             .Select(jt => jt.Tag!.Name!)
@@ -52,20 +52,20 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             return Ok(entryDTO);
         }
-        
+
         // GET: api/journalentry/journalId
         // Each entry has to be tied to a particular journal
         // so that getting all entries for a journal is possible
         [HttpGet("journal/{journalId}")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<JournalEntry>>> GetEntriesByJournal(int journalId) 
+        public async Task<ActionResult<IEnumerable<JournalEntry>>> GetEntriesByJournal(int journalId)
         {
             var journal = await dbContext.Journals.FindAsync(journalId);
             if (journal == null)
             {
                 return NotFound("Journal not found.");
             }
-            
+
             var entries = await dbContext.JournalEntries
                 .Where(e => e.JournalId == journalId)
                 .Select(e => new JournalEntryDTO
@@ -74,7 +74,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
                     JournalId = e.JournalId,
                     Title = e.Title,
                     Content = e.Content,
-                    Tags = e.JournalEntryTags != null 
+                    Tags = e.JournalEntryTags != null
                         ? e.JournalEntryTags
                             .Where(jt => jt.Tag != null && jt.Tag.Name != null)
                             .Select(jt => jt.Tag!.Name!)
@@ -88,28 +88,28 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             return Ok(entries);
         }
-        
+
         // POST: api/journalentry/journalId
-        [HttpPost("journal/{journalId}")] 
+        [HttpPost("journal/{journalId}")]
         [Authorize]
-        public async Task<ActionResult<JournalEntry>> CreateJournalEntry(int journalId, [FromBody] JournalEntryDTO entryDTO) 
+        public async Task<ActionResult<JournalEntry>> CreateJournalEntry(int journalId, [FromBody] JournalEntryDTO entryDTO)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-            
+
             var journal = await dbContext.Journals.FindAsync(journalId);
-            
+
             if (journal == null)
             {
                 return NotFound("Journal not found.");
             }
-            
+
             if (string.IsNullOrWhiteSpace(entryDTO.Title) || string.IsNullOrWhiteSpace(entryDTO.Content))
             {
                 return BadRequest("Title and content are required.");
             }
-       
+
             var now = DateTime.UtcNow;
-            
+
             // Convert tag names from the DTO into Tag objects (or create new ones)
             var tags = new List<Tag>();
             foreach (var tagName in entryDTO.Tags ?? [])
@@ -127,13 +127,17 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
                 tags.Add(tag);
             }
-            
+
             Mood? parsedMood = null;
-            if(Enum.TryParse(entryDTO.Mood, out Mood moodEnum)) 
+            if (!string.IsNullOrWhiteSpace(entryDTO.Mood))
             {
-                parsedMood = moodEnum;
+                var normalized = entryDTO.Mood.Replace(" ", "", StringComparison.OrdinalIgnoreCase);
+                if (Enum.TryParse(normalized, true, out Mood moodEnum))
+                {
+                    parsedMood = moodEnum;
+                }
             }
-            
+
             var entry = new JournalEntry
             {
                 JournalId = journalId,
@@ -151,7 +155,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             await dbContext.JournalEntries.AddAsync(entry);
             await dbContext.SaveChangesAsync();
-            
+
             var resultDTO = new JournalEntryDTO
             {
                 JournalEntryId = entry.JournalEntryId,
@@ -163,30 +167,32 @@ namespace InnerBlend.API.Controllers.JournalControllers
                     .Select(jt => jt.Tag!.Name!)
                     .ToList() ?? [],
                 DateCreated = entry.DateCreated,
+                Location = entry.Location,
+                Mood = entry.Mood?.ToString(),
                 DateModified = entry.DateModified
             };
-            
+
             return CreatedAtAction(nameof(GetJournalEntry), new { entryId = entry.JournalEntryId }, resultDTO);
         }
-        
+
         // PUT: api/journalentry/entryId
-        [HttpPut("{entryId}")] 
+        [HttpPut("{entryId}")]
         [Authorize]
-        public async Task<IActionResult> UpdateJournalEntry(int entryId, [FromBody] JournalEntryDTO entryDTO) 
+        public async Task<IActionResult> UpdateJournalEntry(int entryId, [FromBody] JournalEntryDTO entryDTO)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-            
-            #pragma warning disable CS8620 
+
+#pragma warning disable CS8620
             var entry = await dbContext.JournalEntries
                 .Include(e => e.JournalEntryTags)
                 .ThenInclude(jt => jt.Tag)
                 .FirstOrDefaultAsync(e => e.JournalEntryId == entryId);
 
-            if (entry == null) 
+            if (entry == null)
             {
                 return NotFound("Journal entry not found.");
             }
-            
+
             entry.Title = entryDTO.Title;
             entry.Content = entryDTO.Content;
             entry.DateModified = DateTime.UtcNow;
@@ -196,27 +202,27 @@ namespace InnerBlend.API.Controllers.JournalControllers
             }
             entry.Location = entryDTO.Location;
 
-            
+
             // HANDLE TAGS
             var newTags = entryDTO.Tags?.Select(t => t.Trim().ToLower()).Distinct().ToList() ?? [];
-            
+
             // Get existing tags from DB
             var existingTags = await dbContext.Tags
                 .Where(t => newTags.Contains(t.Name!.ToLower()) && t.UserId == userId)
                 .ToListAsync();
-                
+
             // Tags to add (not in DB yet)
             var tagsToAdd = newTags
                 .Where(t => !existingTags.Any(et => et.Name!.ToLower() == t))
                 .Select(t => new Tag { Name = t, UserId = userId })
                 .ToList();
-                
+
             // Add new tags to DB
             dbContext.Tags.AddRange(tagsToAdd);
             await dbContext.SaveChangesAsync();
-            
+
             var allTags = existingTags.Concat(tagsToAdd).ToList();
-            
+
             // Remove old tag links
             if (entry.JournalEntryTags != null)
             {
@@ -235,34 +241,34 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             return NoContent();
         }
-        
+
         // DELETE: api/journalentry/entryId
-        [HttpDelete("{entryId}")] 
+        [HttpDelete("{entryId}")]
         [Authorize]
-        public async Task<IActionResult> DeleteJournalEntry(int entryId) 
+        public async Task<IActionResult> DeleteJournalEntry(int entryId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
-            
+
             // Fetch entry with tags included
             var entry = await dbContext.JournalEntries
                 .Include(e => e.JournalEntryTags)
                 .ThenInclude(jt => jt.Tag)
                 .FirstOrDefaultAsync(e => e.JournalEntryId == entryId && e.Journal != null && e.Journal.UserId == userId);
-            
-            if (entry == null) 
+
+            if (entry == null)
             {
                 return NotFound("Journal entry not found.");
             }
-            
+
             // Remove tag relationships (without deleting the tags themselves)
             if (entry.JournalEntryTags != null && entry.JournalEntryTags.Any())
             {
                 dbContext.JournalEntryTags.RemoveRange(entry.JournalEntryTags);
             }
-            
+
             dbContext.JournalEntries.Remove(entry);
             await dbContext.SaveChangesAsync();
-            
+
             return NoContent();
         }
     }
