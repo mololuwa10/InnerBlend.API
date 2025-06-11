@@ -119,7 +119,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 var tag = await dbContext.Tags
                     .FirstOrDefaultAsync(t => t.Name != null && t.Name.ToLower() == trimmedName && t.UserId == userId);
 
-                if (tag == null)
+                if (tag == null) 
                 {
                     tag = new Tag { Name = trimmedName, UserId = userId };
                     dbContext.Tags.Add(tag);
@@ -270,6 +270,34 @@ namespace InnerBlend.API.Controllers.JournalControllers
             await dbContext.SaveChangesAsync();
 
             return NoContent();
+        }
+        
+        // MOVE JOURNAL ENTRY TO DIFFERENT JOURNAL
+        [HttpPut("move-entry")] // PUT: api/journalentry/entryId/journal/journalId
+        [Authorize]
+        public async Task<IActionResult> MoveJournalEntry([FromBody] MoveEntryDTO moveEntryDTO) 
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            if (userId == null) return Unauthorized("User not authenticated");
+
+            var entry = await dbContext.JournalEntries
+                    .Include(e => e.Journal)
+                    .FirstOrDefaultAsync(e => e.JournalEntryId == moveEntryDTO.EntryId && e.Journal != null && e.Journal.UserId == userId);
+                    
+            if (entry == null) return NotFound("Journal entry not found");
+            
+            var newJournal = await dbContext.Journals
+                    .FirstOrDefaultAsync(j => j.JournalId == moveEntryDTO.JournalId && j.UserId == userId);
+                    
+            if (newJournal == null) return NotFound("Journal not found");
+            
+            entry.JournalId = newJournal.JournalId;
+            entry.DateModified = DateTime.UtcNow;
+            
+            await dbContext.SaveChangesAsync();
+            
+            return Ok("Entry moved successfully");
         }
     }
 }
