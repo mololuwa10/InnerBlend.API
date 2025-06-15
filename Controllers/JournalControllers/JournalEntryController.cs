@@ -300,4 +300,4 @@ namespace InnerBlend.API.Controllers.JournalControllers
             return Ok("Entry moved successfully");
         }
     }
-}
+}    
