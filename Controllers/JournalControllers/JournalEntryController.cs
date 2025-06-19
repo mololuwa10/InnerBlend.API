@@ -347,5 +347,24 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             return Ok("Deleted Successfully");
         }
+        
+        [HttpPut("{entryId}/images")]
+        public async Task<IActionResult> ReplaceImage(int entryId, [FromQuery] string oldImageUrl, IFormFile newFile) 
+        {
+            if (newFile == null || string.IsNullOrWhiteSpace(oldImageUrl)) return BadRequest("No file provided");
+            
+            var image = await dbContext.Set<JournalEntryImages>()
+                .FirstOrDefaultAsync(i => i.JournalEntryId == entryId && i.ImageUrl == oldImageUrl);
+                
+            if (image == null) return NotFound("Image not found");
+            
+            await _blobStorageServices.DeleteAsync(oldImageUrl);
+            
+            var newImageUrl = await _blobStorageServices.UploadAsync(newFile);
+            image.ImageUrl = newImageUrl;
+            await dbContext.SaveChangesAsync();
+            
+            return Ok(new { message = "Image replaced successfully", newImageUrl });
+        }
     }
 }
