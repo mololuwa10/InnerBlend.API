@@ -19,6 +19,7 @@ namespace InnerBlend.API.Models.Journal
         public ICollection<JournalEntryTag>? JournalEntryTags { get; set; }
         public DateTime? DateCreated { get; set; } = DateTime.UtcNow;
         public DateTime? DateModified { get; set; }
+        public ICollection<JournalEntryImages>? Images { get; set; }
     }
     
     public enum Mood 

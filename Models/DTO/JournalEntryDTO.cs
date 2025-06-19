@@ -16,5 +16,6 @@ namespace InnerBlend.API.Models.DTO
         public ICollection<string>? Tags { get; set; }
         public DateTime? DateCreated { get; set; }
         public DateTime? DateModified { get; set; }
+        public ICollection<string>? ImageUrls { get; set; }
     }
 }
