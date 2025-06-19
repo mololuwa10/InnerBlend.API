@@ -5,6 +5,7 @@ using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using MetadataExtractor;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 
@@ -53,6 +54,25 @@ namespace InnerBlend.API.Services
             await image.SaveAsJpegAsync(output); // or SaveAsPngAsync
             output.Position = 0;
             return output;
+        }
+        
+        public Dictionary<string, string> GetImageMetadata(IFormFile file) 
+        {
+            var metadata = ImageMetadataReader.ReadMetadata(file.OpenReadStream());
+            var result = new Dictionary<string, string>();
+            
+            foreach (var directory in metadata) 
+            {
+                foreach (var tag in directory.Tags) 
+                {
+                    if (!result.ContainsKey(tag.Name)) 
+                    {
+                        result[tag.Name] = tag.Description ?? string.Empty;
+                    }
+                }
+            }
+            
+            return result;
         }
     }
 }

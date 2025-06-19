@@ -367,15 +367,25 @@ namespace InnerBlend.API.Controllers.JournalControllers
         public async Task<IActionResult> ReplaceImage(int entryId, [FromQuery] string oldImageUrl, IFormFile newFile)
         {
             if (newFile == null || string.IsNullOrWhiteSpace(oldImageUrl)) return BadRequest("No file provided");
+            
+            if (newFile.Length > 5 * 1024 * 1024) return BadRequest("File too large");
+            
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+            
+            if (!allowedTypes.Contains(newFile.ContentType)) return BadRequest($"Unsupported file type: {newFile.ContentType}");
 
             var image = await dbContext.Set<JournalEntryImages>()
                 .FirstOrDefaultAsync(i => i.JournalEntryId == entryId && i.ImageUrl == oldImageUrl);
 
             if (image == null) return NotFound("Image not found");
-
+            
+            // Delete old blob
             await _blobStorageServices.DeleteAsync(oldImageUrl);
+            
+            // Compress and upload new image
+            var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(newFile);
+            var newImageUrl = await _blobStorageServices.UploadAsync(compressedStream, newFile.FileName);
 
-            var newImageUrl = await _blobStorageServices.UploadAsync(newFile);
             image.ImageUrl = newImageUrl;
             await dbContext.SaveChangesAsync();
 
