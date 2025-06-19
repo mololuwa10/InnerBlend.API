@@ -149,3 +149,12 @@ C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\Remin
 C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\ReminderFunction\obj\project.assets.json
 C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\ReminderFunction\obj\ReminderFunction.csproj.nuget.dgspec.json
 C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\ReminderFunction\Properties\launchSettings.json
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\Azure.Core.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\Azure.Storage.Blobs.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\Azure.Storage.Common.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\MetadataExtractor.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\SixLabors.ImageSharp.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\System.ClientModel.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\System.IO.Hashing.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\System.Memory.Data.dll
+C:\Users\segil\OneDrive\Documents\Projects\InnerBlend.API\bin\Debug\net9.0\XmpCore.dll
