@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using InnerBlend.API.Data;
 using InnerBlend.API.Models.DTO;
 using InnerBlend.API.Models.Journal;
+using InnerBlend.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class JournalEntryController(ApplicationDbContext dbContext) : ControllerBase
+    public class JournalEntryController(ApplicationDbContext dbContext, BlobStorageServices _blobStorageServices) : ControllerBase
     {
         // GET: api/journalentry/entryId
         // Each entry has a unique ID
@@ -47,7 +48,8 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 Mood = journalEntry.Mood.ToString(),
                 Location = journalEntry.Location,
                 DateCreated = journalEntry.DateCreated,
-                DateModified = journalEntry.DateModified
+                DateModified = journalEntry.DateModified,
+                ImageUrls = journalEntry.Images?.Select(i => i.ImageUrl!).ToList() ?? []
             };
 
             return Ok(entryDTO);
@@ -119,7 +121,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 var tag = await dbContext.Tags
                     .FirstOrDefaultAsync(t => t.Name != null && t.Name.ToLower() == trimmedName && t.UserId == userId);
 
-                if (tag == null) 
+                if (tag == null)
                 {
                     tag = new Tag { Name = trimmedName, UserId = userId };
                     dbContext.Tags.Add(tag);
@@ -271,33 +273,79 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             return NoContent();
         }
-        
+
         // MOVE JOURNAL ENTRY TO DIFFERENT JOURNAL
         [HttpPut("move-entry")] // PUT: api/journalentry/entryId/journal/journalId
         [Authorize]
-        public async Task<IActionResult> MoveJournalEntry([FromBody] MoveEntryDTO moveEntryDTO) 
+        public async Task<IActionResult> MoveJournalEntry([FromBody] MoveEntryDTO moveEntryDTO)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
+
             if (userId == null) return Unauthorized("User not authenticated");
 
             var entry = await dbContext.JournalEntries
                     .Include(e => e.Journal)
                     .FirstOrDefaultAsync(e => e.JournalEntryId == moveEntryDTO.EntryId && e.Journal != null && e.Journal.UserId == userId);
-                    
+
             if (entry == null) return NotFound("Journal entry not found");
-            
+
             var newJournal = await dbContext.Journals
                     .FirstOrDefaultAsync(j => j.JournalId == moveEntryDTO.JournalId && j.UserId == userId);
-                    
+
             if (newJournal == null) return NotFound("Journal not found");
-            
+
             entry.JournalId = newJournal.JournalId;
             entry.DateModified = DateTime.UtcNow;
-            
+
             await dbContext.SaveChangesAsync();
-            
+
             return Ok("Entry moved successfully");
         }
+
+        [HttpPost("{entryId}/images")]
+        public async Task<IActionResult> UploadImages(int entryId, List<IFormFile> files)
+        {
+            if (files == null || !files.Any()) return BadRequest("No files provided");
+
+            var journalEntry = await dbContext.JournalEntries.FindAsync(entryId);
+            if (journalEntry == null) return NotFound("Journal Entry not found");
+
+            var imageEntities = new List<JournalEntryImages>();
+
+            foreach (var file in files)
+            {
+                var imageUrl = await _blobStorageServices.UploadAsync(file);
+                var image = new JournalEntryImages
+                {
+                    JournalEntryId = entryId,
+                    ImageUrl = imageUrl
+                };
+
+                imageEntities.Add(image);
+            }
+
+            dbContext.AddRange(imageEntities);
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Images uploaded successfully", images = imageEntities });
+        }
+
+        [HttpDelete("{entryId}/images")]
+        public async Task<IActionResult> DeleteImages(int entryId, [FromBody] List<string> imageUrls)
+        {
+            var images = dbContext.Set<JournalEntryImages>()
+                .Where(i => i.JournalEntryId == entryId && i.ImageUrl != null && imageUrls.Contains(i.ImageUrl))
+                .ToList();
+
+            foreach (var image in images)
+            {
+                if (image.ImageUrl != null) await _blobStorageServices.DeleteAsync(image.ImageUrl);
+            }
+
+            dbContext.RemoveRange(images);
+            await dbContext.SaveChangesAsync();
+
+            return Ok("Deleted Successfully");
+        }
     }
-}    
+}
