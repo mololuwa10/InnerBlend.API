@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using DotNetEnv;
 using InnerBlend.API.Data;
 using InnerBlend.API.Models;
+using InnerBlend.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -92,6 +93,7 @@ builder.Services.AddCors(options =>
 		builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
 	);
 });
+builder.Services.AddSingleton<BlobStorageServices>();
 
 var app = builder.Build();
 
