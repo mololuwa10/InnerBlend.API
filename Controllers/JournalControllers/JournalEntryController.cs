@@ -314,7 +314,22 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             foreach (var file in files)
             {
-                var imageUrl = await _blobStorageServices.UploadAsync(file);
+                if (file.Length > 5 * 1024 * 1024) 
+                { 
+                    return BadRequest("File too large"); 
+                };
+                
+                var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+                
+                if (!allowedTypes.Contains(file.ContentType)) 
+                {
+                    return BadRequest($"Unsupported file type: {file.ContentType}"); 
+                }
+                
+                var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(file); // compressed image
+                
+                var imageUrl = await _blobStorageServices.UploadAsync(compressedStream, file.FileName);
+                
                 var image = new JournalEntryImages
                 {
                     JournalEntryId = entryId,
@@ -347,23 +362,23 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             return Ok("Deleted Successfully");
         }
-        
+
         [HttpPut("{entryId}/images")]
-        public async Task<IActionResult> ReplaceImage(int entryId, [FromQuery] string oldImageUrl, IFormFile newFile) 
+        public async Task<IActionResult> ReplaceImage(int entryId, [FromQuery] string oldImageUrl, IFormFile newFile)
         {
             if (newFile == null || string.IsNullOrWhiteSpace(oldImageUrl)) return BadRequest("No file provided");
-            
+
             var image = await dbContext.Set<JournalEntryImages>()
                 .FirstOrDefaultAsync(i => i.JournalEntryId == entryId && i.ImageUrl == oldImageUrl);
-                
+
             if (image == null) return NotFound("Image not found");
-            
+
             await _blobStorageServices.DeleteAsync(oldImageUrl);
-            
+
             var newImageUrl = await _blobStorageServices.UploadAsync(newFile);
             image.ImageUrl = newImageUrl;
             await dbContext.SaveChangesAsync();
-            
+
             return Ok(new { message = "Image replaced successfully", newImageUrl });
         }
     }
