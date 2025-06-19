@@ -25,6 +25,9 @@ builder.Configuration["Jwt:ExpiresInMinutes"] = Env.GetString("JWT_EXPIRES_IN_MI
 
 builder.Configuration["Kestrel:Endpoints:Http:Url"] = Env.GetString("KESTREL_URL");
 
+builder.Configuration["AzureBlobStorage:ConnectionString"] = Env.GetString("AZURE_STORAGE_CONNECTION_STRING");
+builder.Configuration["AzureBlobStorage:ContainerName"] = Env.GetString("AZURE_BLOB_CONTAINER_NAME");	
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
