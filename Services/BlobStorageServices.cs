@@ -5,6 +5,7 @@ using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using MetadataExtractor;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
@@ -20,16 +21,22 @@ namespace InnerBlend.API.Services
             var connectionString = configuration["AzureBlobStorage:ConnectionString"];
             var containerName = configuration["AzureBlobStorage:ContainerName"];
             _containerClient = new BlobContainerClient(connectionString, containerName);
+            
+            Console.WriteLine($"Blob Connection String: {connectionString}");
+            Console.WriteLine($"Blob Container Name: {containerName}");
         }
         
         public async Task<string> UploadAsync (Stream stream, string fileName) 
         {
-            await _containerClient!.CreateIfNotExistsAsync(PublicAccessType.Blob);
+            await _containerClient!.CreateIfNotExistsAsync(PublicAccessType.None);
             
             var blobClient = _containerClient.GetBlobClient(Guid.NewGuid() + Path.GetExtension(fileName));
             await blobClient.UploadAsync(stream, overwrite: true);
+            
+            // Generating a SAS token
+            var sasUri = GenerateSasUriForBlob(blobClient, TimeSpan.FromHours(1));
 
-            return blobClient.Uri.ToString();
+            return sasUri.ToString();
         }
         
         public async Task DeleteAsync(string fileUrl) 
@@ -73,6 +80,27 @@ namespace InnerBlend.API.Services
             }
             
             return result;
+        }
+        
+        private Uri GenerateSasUriForBlob(BlobClient blobClient, TimeSpan duration) 
+        {
+            if (!_containerClient!.CanGenerateSasUri) 
+            {
+                throw new InvalidOperationException("The container client does not support generating SAS URIs.");
+            }
+            
+            var sasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = blobClient.BlobContainerName,
+                BlobName = blobClient.Name,
+                Resource = "b", // Indicates it's a blob, not a container
+                ExpiresOn = DateTimeOffset.UtcNow.Add(duration)
+            };
+
+            sasBuilder.SetPermissions(BlobSasPermissions.Read); // Only allow reading the image
+
+            // Generate the full URI with SAS token
+            return blobClient.GenerateSasUri(sasBuilder);
         }
     }
 }

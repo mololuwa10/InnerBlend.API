@@ -302,7 +302,9 @@ namespace InnerBlend.API.Controllers.JournalControllers
             return Ok("Entry moved successfully");
         }
 
+
         [HttpPost("{entryId}/images")]
+        [Authorize]
         public async Task<IActionResult> UploadImages(int entryId, List<IFormFile> files)
         {
             if (files == null || !files.Any()) return BadRequest("No files provided");
