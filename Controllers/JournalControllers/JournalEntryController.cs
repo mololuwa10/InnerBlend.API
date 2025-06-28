@@ -187,24 +187,8 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 dbContext.AddRange(imageEntities);
                 await dbContext.SaveChangesAsync();
             }
-
-            // var resultDTO = new JournalEntryDTO
-            // {
-            //     JournalEntryId = entry.JournalEntryId,
-            //     JournalId = entry.JournalId,
-            //     Title = entry.Title,
-            //     Content = entry.Content,
-            //     Tags = entry.JournalEntryTags?
-            //         .Where(jt => jt.Tag != null && jt.Tag.Name != null)
-            //         .Select(jt => jt.Tag!.Name!)
-            //         .ToList() ?? [],
-            //     DateCreated = entry.DateCreated,
-            //     Location = entry.Location,
-            //     Mood = entry.Mood?.ToString(),
-            //     DateModified = entry.DateModified
-            // };
-
-           return Ok(new
+            
+            return Ok(new
             {
                 message = "Journal entry created successfully",
                 entryId = entry.JournalEntryId,
