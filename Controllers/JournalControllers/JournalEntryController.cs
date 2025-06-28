@@ -92,9 +92,9 @@ namespace InnerBlend.API.Controllers.JournalControllers
         }
 
         // POST: api/journalentry/journalId
-        [HttpPost("journal/{journalId}")]
+        [HttpPost("{journalId}/journal")]
         [Authorize]
-        public async Task<ActionResult<JournalEntry>> CreateJournalEntry(int journalId, [FromBody] JournalEntryDTO entryDTO)
+        public async Task<ActionResult<JournalEntry>> CreateJournalEntry(int journalId, [FromForm] JournalEntryCreateRequest entryDTO, [FromForm] List<IFormFile>? files)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
@@ -157,24 +157,59 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             await dbContext.JournalEntries.AddAsync(entry);
             await dbContext.SaveChangesAsync();
-
-            var resultDTO = new JournalEntryDTO
+            
+            var imageEntities = new List<JournalEntryImages>();
+            if (files != null && files.Count != 0) 
             {
-                JournalEntryId = entry.JournalEntryId,
-                JournalId = entry.JournalId,
-                Title = entry.Title,
-                Content = entry.Content,
-                Tags = entry.JournalEntryTags?
-                    .Where(jt => jt.Tag != null && jt.Tag.Name != null)
-                    .Select(jt => jt.Tag!.Name!)
-                    .ToList() ?? [],
-                DateCreated = entry.DateCreated,
-                Location = entry.Location,
-                Mood = entry.Mood?.ToString(),
-                DateModified = entry.DateModified
-            };
+                foreach(var file in files) 
+                {
+                    if (file.Length > 5 * 1024 * 1024)
+                    {
+                        return BadRequest("File too large");
+                    }
+                    
+                    var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+                    if (!allowedTypes.Contains(file.ContentType))
+                        return BadRequest($"Unsupported file type: {file.ContentType}");
 
-            return CreatedAtAction(nameof(GetJournalEntry), new { entryId = entry.JournalEntryId }, resultDTO);
+                    var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(file);
+                    var imageUrl = await _blobStorageServices.UploadAsync(compressedStream, file.FileName);
+
+                    var image = new JournalEntryImages
+                    {
+                        JournalEntryId = (int) entry.JournalEntryId!,
+                        ImageUrl = imageUrl
+                    };
+                    
+                    imageEntities.Add(image);
+                }
+                
+                dbContext.AddRange(imageEntities);
+                await dbContext.SaveChangesAsync();
+            }
+
+            // var resultDTO = new JournalEntryDTO
+            // {
+            //     JournalEntryId = entry.JournalEntryId,
+            //     JournalId = entry.JournalId,
+            //     Title = entry.Title,
+            //     Content = entry.Content,
+            //     Tags = entry.JournalEntryTags?
+            //         .Where(jt => jt.Tag != null && jt.Tag.Name != null)
+            //         .Select(jt => jt.Tag!.Name!)
+            //         .ToList() ?? [],
+            //     DateCreated = entry.DateCreated,
+            //     Location = entry.Location,
+            //     Mood = entry.Mood?.ToString(),
+            //     DateModified = entry.DateModified
+            // };
+
+           return Ok(new
+            {
+                message = "Journal entry created successfully",
+                entryId = entry.JournalEntryId,
+                images = imageEntities
+            });
         }
 
         // PUT: api/journalentry/entryId
@@ -302,7 +337,6 @@ namespace InnerBlend.API.Controllers.JournalControllers
             return Ok("Entry moved successfully");
         }
 
-
         [HttpPost("{entryId}/images")]
         [Authorize]
         public async Task<IActionResult> UploadImages(int entryId, List<IFormFile> files)
@@ -316,22 +350,23 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             foreach (var file in files)
             {
-                if (file.Length > 5 * 1024 * 1024) 
-                { 
-                    return BadRequest("File too large"); 
-                };
-                
-                var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
-                
-                if (!allowedTypes.Contains(file.ContentType)) 
+                if (file.Length > 5 * 1024 * 1024)
                 {
-                    return BadRequest($"Unsupported file type: {file.ContentType}"); 
+                    return BadRequest("File too large");
                 }
-                
+                ;
+
+                var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+
+                if (!allowedTypes.Contains(file.ContentType))
+                {
+                    return BadRequest($"Unsupported file type: {file.ContentType}");
+                }
+
                 var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(file); // compressed image
-                
+
                 var imageUrl = await _blobStorageServices.UploadAsync(compressedStream, file.FileName);
-                
+
                 var image = new JournalEntryImages
                 {
                     JournalEntryId = entryId,
@@ -369,21 +404,21 @@ namespace InnerBlend.API.Controllers.JournalControllers
         public async Task<IActionResult> ReplaceImage(int entryId, [FromQuery] string oldImageUrl, IFormFile newFile)
         {
             if (newFile == null || string.IsNullOrWhiteSpace(oldImageUrl)) return BadRequest("No file provided");
-            
+
             if (newFile.Length > 5 * 1024 * 1024) return BadRequest("File too large");
-            
+
             var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
-            
+
             if (!allowedTypes.Contains(newFile.ContentType)) return BadRequest($"Unsupported file type: {newFile.ContentType}");
 
             var image = await dbContext.Set<JournalEntryImages>()
                 .FirstOrDefaultAsync(i => i.JournalEntryId == entryId && i.ImageUrl == oldImageUrl);
 
             if (image == null) return NotFound("Image not found");
-            
+
             // Delete old blob
             await _blobStorageServices.DeleteAsync(oldImageUrl);
-            
+
             // Compress and upload new image
             var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(newFile);
             var newImageUrl = await _blobStorageServices.UploadAsync(compressedStream, newFile.FileName);
