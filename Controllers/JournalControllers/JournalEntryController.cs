@@ -99,17 +99,17 @@ namespace InnerBlend.API.Controllers.JournalControllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
             var journal = await dbContext.Journals.FindAsync(journalId);
-
+        
+            if (userId == null) 
+            {
+                return Unauthorized("User not authenticated");
+            }
+            
             if (journal == null)
             {
                 return NotFound("Journal not found.");
             }
-
-            if (string.IsNullOrWhiteSpace(entryDTO.Title) || string.IsNullOrWhiteSpace(entryDTO.Content))
-            {
-                return BadRequest("Title and content are required.");
-            }
-
+            
             var now = DateTime.UtcNow;
 
             // Convert tag names from the DTO into Tag objects (or create new ones)
