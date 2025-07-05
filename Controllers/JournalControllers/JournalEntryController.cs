@@ -203,7 +203,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
         {
              var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
-#pragma warning disable CS8620
+            #pragma warning disable CS8620
             var entry = await dbContext.JournalEntries
                 .Include(e => e.JournalEntryTags)
                 .ThenInclude(jt => jt.Tag)
