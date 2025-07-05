@@ -201,7 +201,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
         [Authorize]
         public async Task<IActionResult> UpdateJournalEntry(int entryId, [FromBody] JournalEntryDTO entryDTO)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
 #pragma warning disable CS8620
             var entry = await dbContext.JournalEntries
