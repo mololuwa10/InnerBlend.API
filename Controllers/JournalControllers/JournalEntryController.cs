@@ -91,7 +91,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
             return Ok(entries);
         }
 
-        // POST: api/journalentry/journalId
+        // POST: api/journalId/journalentry
         [HttpPost("{journalId}/journal")]
         [Authorize]
         public async Task<ActionResult<JournalEntry>> CreateJournalEntry(int journalId, [FromForm] JournalEntryCreateRequest entryDTO, [FromForm] List<IFormFile>? files)
@@ -187,12 +187,18 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 dbContext.AddRange(imageEntities);
                 await dbContext.SaveChangesAsync();
             }
-            
+
             return Ok(new
             {
                 message = "Journal entry created successfully",
                 entryId = entry.JournalEntryId,
-                images = imageEntities
+                images = imageEntities.Select(i => new 
+                {
+                    i.EntryImageId,
+                    i.ImageUrl,
+                    i.JournalEntryId,
+                    i.DateUploaded
+                })
             });
         }
 
