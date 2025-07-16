@@ -8,11 +8,11 @@ namespace InnerBlend.API.Data
 {
     public class KeyGenerator
     {
-        public static string GenerateKey() 
+        public static string GenerateKey()
         {
             byte[] key = new byte[32];
             RandomNumberGenerator.Fill(key);
-            
+
             return Convert.ToBase64String(key);
         }
     }

@@ -10,10 +10,10 @@ namespace InnerBlend.API.Models.Journal
     {
         [Key]
         public int EntryImageId { get; set; }
-        
+
         public int JournalEntryId { get; set; }
         public JournalEntry? JournalEntry { get; set; }
-        
+
         [Required]
         public string? ImageUrl { get; set; }
         public DateTime DateUploaded { get; set; } = DateTime.UtcNow;

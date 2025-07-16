@@ -21,8 +21,8 @@ namespace InnerBlend.API.Models.Journal
         public DateTime? DateModified { get; set; }
         public ICollection<JournalEntryImages>? Images { get; set; }
     }
-    
-    public enum Mood 
+
+    public enum Mood
     {
         VerySad,
         Sad,

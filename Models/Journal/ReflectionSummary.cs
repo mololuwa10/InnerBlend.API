@@ -5,8 +5,5 @@ using System.Threading.Tasks;
 
 namespace InnerBlend.API.Models.Journal
 {
-    public class ReflectionSummary
-    {
-        
-    }
+    public class ReflectionSummary { }
 }

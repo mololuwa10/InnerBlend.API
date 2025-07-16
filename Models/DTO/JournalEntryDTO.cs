@@ -11,7 +11,7 @@ namespace InnerBlend.API.Models.DTO
         public int? JournalId { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
-        public string? Mood { get; set; } 
+        public string? Mood { get; set; }
         public string? Location { get; set; }
         public ICollection<string>? Tags { get; set; }
         public DateTime? DateCreated { get; set; }

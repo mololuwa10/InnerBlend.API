@@ -12,10 +12,11 @@ namespace InnerBlend.API.Models.Journal
         [Key]
         public int TagId { get; set; }
         public string? Name { get; set; }
+
         [ForeignKey("User")]
         public string? UserId { get; set; }
         public User? User { get; set; }
-        
+
         public ICollection<JournalEntryTag>? JournalEntries { get; set; }
     }
 }

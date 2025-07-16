@@ -9,11 +9,11 @@ namespace InnerBlend.API.Data
     {
         public static DateTime? ToUtc(this DateTime? dateTime)
         {
-            if (dateTime.HasValue && dateTime.Value.Kind == DateTimeKind.Utc) 
+            if (dateTime.HasValue && dateTime.Value.Kind == DateTimeKind.Utc)
             {
                 return dateTime;
             }
-            
+
             return dateTime?.ToUniversalTime();
         }
     }

@@ -15,7 +15,10 @@ namespace InnerBlend.API.Controllers.JournalControllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class JournalEntryController(ApplicationDbContext dbContext, BlobStorageServices _blobStorageServices) : ControllerBase
+    public class JournalEntryController(
+        ApplicationDbContext dbContext,
+        BlobStorageServices _blobStorageServices
+    ) : ControllerBase
     {
         // GET: api/journalentry/entryId
         // Each entry has a unique ID
@@ -23,9 +26,9 @@ namespace InnerBlend.API.Controllers.JournalControllers
         [Authorize]
         public async Task<ActionResult<JournalEntry>> GetJournalEntry(int entryId)
         {
-            var journalEntry = await dbContext.JournalEntries
-                .Include(e => e.JournalEntryTags!)
-                    .ThenInclude(jt => jt.Tag)
+            var journalEntry = await dbContext
+                .JournalEntries.Include(e => e.JournalEntryTags!)
+                .ThenInclude(jt => jt.Tag)
                 .FirstOrDefaultAsync(e => e.JournalEntryId == entryId);
 
             if (journalEntry == null)
@@ -39,9 +42,10 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 JournalId = journalEntry.JournalId,
                 Title = journalEntry.Title,
                 Content = journalEntry.Content,
-                Tags = journalEntry.JournalEntryTags != null
-                        ? journalEntry.JournalEntryTags
-                            .Where(jt => jt.Tag != null && jt.Tag.Name != null)
+                Tags =
+                    journalEntry.JournalEntryTags != null
+                        ? journalEntry
+                            .JournalEntryTags.Where(jt => jt.Tag != null && jt.Tag.Name != null)
                             .Select(jt => jt.Tag!.Name!)
                             .ToList()
                         : [],
@@ -49,7 +53,7 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 Location = journalEntry.Location,
                 DateCreated = journalEntry.DateCreated,
                 DateModified = journalEntry.DateModified,
-                ImageUrls = journalEntry.Images?.Select(i => i.ImageUrl!).ToList() ?? []
+                ImageUrls = journalEntry.Images?.Select(i => i.ImageUrl!).ToList() ?? [],
             };
 
             return Ok(entryDTO);
@@ -60,7 +64,9 @@ namespace InnerBlend.API.Controllers.JournalControllers
         // so that getting all entries for a journal is possible
         [HttpGet("journal/{journalId}")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<JournalEntry>>> GetEntriesByJournal(int journalId)
+        public async Task<ActionResult<IEnumerable<JournalEntry>>> GetEntriesByJournal(
+            int journalId
+        )
         {
             var journal = await dbContext.Journals.FindAsync(journalId);
             if (journal == null)
@@ -68,25 +74,27 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 return NotFound("Journal not found.");
             }
 
-            var entries = await dbContext.JournalEntries
-                .Where(e => e.JournalId == journalId)
+            var entries = await dbContext
+                .JournalEntries.Where(e => e.JournalId == journalId)
                 .Select(e => new JournalEntryDTO
                 {
                     JournalEntryId = e.JournalEntryId,
                     JournalId = e.JournalId,
                     Title = e.Title,
                     Content = e.Content,
-                    Tags = e.JournalEntryTags != null
-                        ? e.JournalEntryTags
-                            .Where(jt => jt.Tag != null && jt.Tag.Name != null)
-                            .Select(jt => jt.Tag!.Name!)
-                            .ToList()
-                        : new List<string>(),
+                    Tags =
+                        e.JournalEntryTags != null
+                            ? e
+                                .JournalEntryTags.Where(jt => jt.Tag != null && jt.Tag.Name != null)
+                                .Select(jt => jt.Tag!.Name!)
+                                .ToList()
+                            : new List<string>(),
                     Mood = e.Mood.ToString(),
                     Location = e.Location,
                     DateCreated = e.DateCreated,
-                    DateModified = e.DateModified
-                }).ToListAsync();
+                    DateModified = e.DateModified,
+                })
+                .ToListAsync();
 
             return Ok(entries);
         }
@@ -94,22 +102,26 @@ namespace InnerBlend.API.Controllers.JournalControllers
         // POST: api/journalId/journalentry
         [HttpPost("{journalId}/journal")]
         [Authorize]
-        public async Task<ActionResult<JournalEntry>> CreateJournalEntry(int journalId, [FromForm] JournalEntryCreateRequest entryDTO, [FromForm] List<IFormFile>? files)
+        public async Task<ActionResult<JournalEntry>> CreateJournalEntry(
+            int journalId,
+            [FromForm] JournalEntryCreateRequest entryDTO,
+            [FromForm] List<IFormFile>? files
+        )
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
             var journal = await dbContext.Journals.FindAsync(journalId);
-        
-            if (userId == null) 
+
+            if (userId == null)
             {
                 return Unauthorized("User not authenticated");
             }
-            
+
             if (journal == null)
             {
                 return NotFound("Journal not found.");
             }
-            
+
             var now = DateTime.UtcNow;
 
             // Convert tag names from the DTO into Tag objects (or create new ones)
@@ -118,8 +130,9 @@ namespace InnerBlend.API.Controllers.JournalControllers
             {
                 var trimmedName = tagName.Trim().ToLower();
 
-                var tag = await dbContext.Tags
-                    .FirstOrDefaultAsync(t => t.Name != null && t.Name.ToLower() == trimmedName && t.UserId == userId);
+                var tag = await dbContext.Tags.FirstOrDefaultAsync(t =>
+                    t.Name != null && t.Name.ToLower() == trimmedName && t.UserId == userId
+                );
 
                 if (tag == null)
                 {
@@ -145,73 +158,86 @@ namespace InnerBlend.API.Controllers.JournalControllers
                 JournalId = journalId,
                 Title = entryDTO.Title,
                 Content = entryDTO.Content,
-                JournalEntryTags = tags.Select(tag => new JournalEntryTag
-                {
-                    Tag = tag
-                }).ToList(),
+                JournalEntryTags = tags.Select(tag => new JournalEntryTag { Tag = tag }).ToList(),
                 Mood = parsedMood,
                 Location = entryDTO.Location,
                 DateCreated = now,
-                DateModified = now
+                DateModified = now,
             };
 
             await dbContext.JournalEntries.AddAsync(entry);
             await dbContext.SaveChangesAsync();
-            
+
             var imageEntities = new List<JournalEntryImages>();
-            if (files != null && files.Count != 0) 
+            if (files != null && files.Count != 0)
             {
-                foreach(var file in files) 
+                foreach (var file in files)
                 {
                     if (file.Length > 5 * 1024 * 1024)
                     {
                         return BadRequest("File too large");
                     }
-                    
+
                     var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
                     if (!allowedTypes.Contains(file.ContentType))
                         return BadRequest($"Unsupported file type: {file.ContentType}");
 
-                    var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(file);
-                    var imageUrl = await _blobStorageServices.UploadAsync(compressedStream, file.FileName);
+                    var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(
+                        file
+                    );
+                    var imageUrl = await _blobStorageServices.UploadAsync(
+                        compressedStream,
+                        file.FileName
+                    );
 
                     var image = new JournalEntryImages
                     {
-                        JournalEntryId = (int) entry.JournalEntryId!,
-                        ImageUrl = imageUrl
+                        JournalEntryId = (int)entry.JournalEntryId!,
+                        ImageUrl = imageUrl,
                     };
-                    
+
                     imageEntities.Add(image);
                 }
-                
+
                 dbContext.AddRange(imageEntities);
                 await dbContext.SaveChangesAsync();
             }
 
-            return Ok(new
-            {
-                message = "Journal entry created successfully",
-                entryId = entry.JournalEntryId,
-                images = imageEntities.Select(i => new 
+            return Ok(
+                new
                 {
-                    i.EntryImageId,
-                    i.ImageUrl,
-                    i.JournalEntryId,
-                    i.DateUploaded
-                })
-            });
+                    message = "Journal entry created successfully",
+                    entryId = entry.JournalEntryId,
+                    title = entry.Title,
+                    content = entry.Content,
+                    tags = entry.JournalEntryTags?.Select(jet => jet.Tag?.Name).ToList(),
+                    mood = entry.Mood?.ToString(),
+                    location = entry.Location,
+                    dateCreated = entry.DateCreated,
+                    images = imageEntities.Select(i => new
+                    {
+                        i.EntryImageId,
+                        i.ImageUrl,
+                        i.JournalEntryId,
+                        i.DateUploaded,
+                    }),
+                }
+            );
         }
 
         // PUT: api/journalentry/entryId
         [HttpPut("{entryId}")]
         [Authorize]
-        public async Task<IActionResult> UpdateJournalEntry(int entryId, [FromBody] JournalEntryDTO entryDTO)
+        public async Task<IActionResult> UpdateJournalEntry(
+            int entryId,
+            [FromBody] JournalEntryDTO entryDTO
+        )
         {
-             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
-            #pragma warning disable CS8620
-            var entry = await dbContext.JournalEntries
-                .Include(e => e.JournalEntryTags)
+#pragma warning disable CS8620
+            var entry = await dbContext
+                .JournalEntries.Include(e => e.JournalEntryTags)
                 .ThenInclude(jt => jt.Tag)
                 .FirstOrDefaultAsync(e => e.JournalEntryId == entryId);
 
@@ -229,13 +255,12 @@ namespace InnerBlend.API.Controllers.JournalControllers
             }
             entry.Location = entryDTO.Location;
 
-
             // HANDLE TAGS
             var newTags = entryDTO.Tags?.Select(t => t.Trim().ToLower()).Distinct().ToList() ?? [];
 
             // Get existing tags from DB
-            var existingTags = await dbContext.Tags
-                .Where(t => newTags.Contains(t.Name!.ToLower()) && t.UserId == userId)
+            var existingTags = await dbContext
+                .Tags.Where(t => newTags.Contains(t.Name!.ToLower()) && t.UserId == userId)
                 .ToListAsync();
 
             // Tags to add (not in DB yet)
@@ -258,11 +283,8 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
             // Add updated tag links
             entry.JournalEntryTags = allTags
-                .Select(t => new JournalEntryTag
-                {
-                    JournalEntryId = entryId,
-                    TagId = t.TagId
-                }).ToList();
+                .Select(t => new JournalEntryTag { JournalEntryId = entryId, TagId = t.TagId })
+                .ToList();
 
             await dbContext.SaveChangesAsync();
 
@@ -277,10 +299,12 @@ namespace InnerBlend.API.Controllers.JournalControllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
 
             // Fetch entry with tags included
-            var entry = await dbContext.JournalEntries
-                .Include(e => e.JournalEntryTags)
+            var entry = await dbContext
+                .JournalEntries.Include(e => e.JournalEntryTags)
                 .ThenInclude(jt => jt.Tag)
-                .FirstOrDefaultAsync(e => e.JournalEntryId == entryId && e.Journal != null && e.Journal.UserId == userId);
+                .FirstOrDefaultAsync(e =>
+                    e.JournalEntryId == entryId && e.Journal != null && e.Journal.UserId == userId
+                );
 
             if (entry == null)
             {
@@ -306,18 +330,26 @@ namespace InnerBlend.API.Controllers.JournalControllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (userId == null) return Unauthorized("User not authenticated");
+            if (userId == null)
+                return Unauthorized("User not authenticated");
 
-            var entry = await dbContext.JournalEntries
-                    .Include(e => e.Journal)
-                    .FirstOrDefaultAsync(e => e.JournalEntryId == moveEntryDTO.EntryId && e.Journal != null && e.Journal.UserId == userId);
+            var entry = await dbContext
+                .JournalEntries.Include(e => e.Journal)
+                .FirstOrDefaultAsync(e =>
+                    e.JournalEntryId == moveEntryDTO.EntryId
+                    && e.Journal != null
+                    && e.Journal.UserId == userId
+                );
 
-            if (entry == null) return NotFound("Journal entry not found");
+            if (entry == null)
+                return NotFound("Journal entry not found");
 
-            var newJournal = await dbContext.Journals
-                    .FirstOrDefaultAsync(j => j.JournalId == moveEntryDTO.JournalId && j.UserId == userId);
+            var newJournal = await dbContext.Journals.FirstOrDefaultAsync(j =>
+                j.JournalId == moveEntryDTO.JournalId && j.UserId == userId
+            );
 
-            if (newJournal == null) return NotFound("Journal not found");
+            if (newJournal == null)
+                return NotFound("Journal not found");
 
             entry.JournalId = newJournal.JournalId;
             entry.DateModified = DateTime.UtcNow;
@@ -331,10 +363,12 @@ namespace InnerBlend.API.Controllers.JournalControllers
         [Authorize]
         public async Task<IActionResult> UploadImages(int entryId, List<IFormFile> files)
         {
-            if (files == null || !files.Any()) return BadRequest("No files provided");
+            if (files == null || !files.Any())
+                return BadRequest("No files provided");
 
             var journalEntry = await dbContext.JournalEntries.FindAsync(entryId);
-            if (journalEntry == null) return NotFound("Journal Entry not found");
+            if (journalEntry == null)
+                return NotFound("Journal Entry not found");
 
             var imageEntities = new List<JournalEntryImages>();
 
@@ -355,12 +389,15 @@ namespace InnerBlend.API.Controllers.JournalControllers
 
                 var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(file); // compressed image
 
-                var imageUrl = await _blobStorageServices.UploadAsync(compressedStream, file.FileName);
+                var imageUrl = await _blobStorageServices.UploadAsync(
+                    compressedStream,
+                    file.FileName
+                );
 
                 var image = new JournalEntryImages
                 {
                     JournalEntryId = entryId,
-                    ImageUrl = imageUrl
+                    ImageUrl = imageUrl,
                 };
 
                 imageEntities.Add(image);
@@ -373,15 +410,24 @@ namespace InnerBlend.API.Controllers.JournalControllers
         }
 
         [HttpDelete("{entryId}/images")]
-        public async Task<IActionResult> DeleteImages(int entryId, [FromBody] List<string> imageUrls)
+        public async Task<IActionResult> DeleteImages(
+            int entryId,
+            [FromBody] List<string> imageUrls
+        )
         {
-            var images = dbContext.Set<JournalEntryImages>()
-                .Where(i => i.JournalEntryId == entryId && i.ImageUrl != null && imageUrls.Contains(i.ImageUrl))
+            var images = dbContext
+                .Set<JournalEntryImages>()
+                .Where(i =>
+                    i.JournalEntryId == entryId
+                    && i.ImageUrl != null
+                    && imageUrls.Contains(i.ImageUrl)
+                )
                 .ToList();
 
             foreach (var image in images)
             {
-                if (image.ImageUrl != null) await _blobStorageServices.DeleteAsync(image.ImageUrl);
+                if (image.ImageUrl != null)
+                    await _blobStorageServices.DeleteAsync(image.ImageUrl);
             }
 
             dbContext.RemoveRange(images);
@@ -391,27 +437,39 @@ namespace InnerBlend.API.Controllers.JournalControllers
         }
 
         [HttpPut("{entryId}/images")]
-        public async Task<IActionResult> ReplaceImage(int entryId, [FromQuery] string oldImageUrl, IFormFile newFile)
+        public async Task<IActionResult> ReplaceImage(
+            int entryId,
+            [FromQuery] string oldImageUrl,
+            IFormFile newFile
+        )
         {
-            if (newFile == null || string.IsNullOrWhiteSpace(oldImageUrl)) return BadRequest("No file provided");
+            if (newFile == null || string.IsNullOrWhiteSpace(oldImageUrl))
+                return BadRequest("No file provided");
 
-            if (newFile.Length > 5 * 1024 * 1024) return BadRequest("File too large");
+            if (newFile.Length > 5 * 1024 * 1024)
+                return BadRequest("File too large");
 
             var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
 
-            if (!allowedTypes.Contains(newFile.ContentType)) return BadRequest($"Unsupported file type: {newFile.ContentType}");
+            if (!allowedTypes.Contains(newFile.ContentType))
+                return BadRequest($"Unsupported file type: {newFile.ContentType}");
 
-            var image = await dbContext.Set<JournalEntryImages>()
+            var image = await dbContext
+                .Set<JournalEntryImages>()
                 .FirstOrDefaultAsync(i => i.JournalEntryId == entryId && i.ImageUrl == oldImageUrl);
 
-            if (image == null) return NotFound("Image not found");
+            if (image == null)
+                return NotFound("Image not found");
 
             // Delete old blob
             await _blobStorageServices.DeleteAsync(oldImageUrl);
 
             // Compress and upload new image
             var compressedStream = await _blobStorageServices.CompressAndResizeImageAsync(newFile);
-            var newImageUrl = await _blobStorageServices.UploadAsync(compressedStream, newFile.FileName);
+            var newImageUrl = await _blobStorageServices.UploadAsync(
+                compressedStream,
+                newFile.FileName
+            );
 
             image.ImageUrl = newImageUrl;
             await dbContext.SaveChangesAsync();

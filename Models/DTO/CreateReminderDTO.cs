@@ -10,7 +10,7 @@ namespace InnerBlend.API.Models.DTO
     {
         [Required]
         public string? ReminderMessage { get; set; }
-        
+
         [Required]
         public TimeOnly ReminderTime { get; set; }
         public bool IsActive { get; set; } = true;
